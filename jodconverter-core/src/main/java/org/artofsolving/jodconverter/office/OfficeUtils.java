@@ -17,6 +17,8 @@
 // Public License along with JODConverter.  If not, see
 // <http://www.gnu.org/licenses/>.
 //
+// Contributors:
+//     Laurent Doguin (Nuxeo), Julien Carsique (Nuxeo)
 package org.artofsolving.jodconverter.office;
 
 import java.io.File;
@@ -47,14 +49,14 @@ public class OfficeUtils {
         return propertyValue;
     }
 
-    public static PropertyValue[] toUnoProperties(Map<String,?> properties) {
+    public static PropertyValue[] toUnoProperties(Map<String, ?> properties) {
         PropertyValue[] propertyValues = new PropertyValue[properties.size()];
         int i = 0;
-        for (Map.Entry<String,?> entry : properties.entrySet()) {
+        for (Map.Entry<String, ?> entry : properties.entrySet()) {
             Object value = entry.getValue();
             if (value instanceof Map) {
                 @SuppressWarnings("unchecked")
-                Map<String,Object> subProperties = (Map<String,Object>) value;
+                Map<String, Object> subProperties = (Map<String, Object>) value;
                 value = toUnoProperties(subProperties);
             }
             propertyValues[i++] = property(entry.getKey(), value);
@@ -71,22 +73,30 @@ public class OfficeUtils {
         }
     }
 
+    /**
+     * Search for an (Open/Libre)Office install.
+     * If the System property "office.home" is defined, it takes precedence.
+     *
+     * @see PlatformUtils#findOfficeHome()
+     *
+     * @return Office home found
+     */
     public static File getDefaultOfficeHome() {
-        File officeHome = new File(PlatformUtils.OO_HOME_PATH);
-        if (officeHome != null && officeHome.exists() ) {
-            return officeHome;
-        } else if (System.getProperty("office.home") != null) {
-            officeHome = new File(System.getProperty("office.home"));
-        }
-        return officeHome;
+        return new File(System.getProperty("office.home",
+                PlatformUtils.findOfficeHome()));
     }
 
+    /**
+     * Search for an (Open/Libre)Office profile.
+     * If the System property "office.profile" is defined, it takes precedence.
+     *
+     * @see PlatformUtils#findOfficeProfileDir()
+     *
+     * @return Office profile found
+     */
     public static File getDefaultProfileDir() {
-        if (System.getProperty("office.profile") != null) {
-            return new File(System.getProperty("office.profile"));
-        } else {
-            return new File(PlatformUtils.OO_PROFILE_DIR_PATH);
-        }
+        return new File(System.getProperty("office.profile",
+                PlatformUtils.findOfficeProfileDir()));
     }
 
     public static File getOfficeExecutable(File officeHome) {
