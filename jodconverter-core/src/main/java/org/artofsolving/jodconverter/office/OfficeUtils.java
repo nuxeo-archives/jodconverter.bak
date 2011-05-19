@@ -24,7 +24,6 @@ import java.util.Map;
 
 import org.artofsolving.jodconverter.util.PlatformUtils;
 
-
 import com.sun.star.beans.PropertyValue;
 import com.sun.star.uno.UnoRuntime;
 
@@ -58,7 +57,7 @@ public class OfficeUtils {
                 Map<String,Object> subProperties = (Map<String,Object>) value;
                 value = toUnoProperties(subProperties);
             }
-            propertyValues[i++] = property((String) entry.getKey(), value);
+            propertyValues[i++] = property(entry.getKey(), value);
         }
         return propertyValues;
     }
@@ -73,30 +72,20 @@ public class OfficeUtils {
     }
 
     public static File getDefaultOfficeHome() {
-        if (System.getProperty("office.home") != null) {
-            return new File(System.getProperty("office.home"));
+        File officeHome = new File(PlatformUtils.OO_HOME_PATH);
+        if (officeHome != null && officeHome.exists() ) {
+            return officeHome;
+        } else if (System.getProperty("office.home") != null) {
+            officeHome = new File(System.getProperty("office.home"));
         }
-        if (PlatformUtils.isWindows()) {
-            return new File(System.getenv("ProgramFiles"), "OpenOffice.org 3");
-        } else if (PlatformUtils.isMac()) {
-            return new File("/Applications/OpenOffice.org.app/Contents");
-        } else {
-            // Linux or Solaris
-            return new File("/opt/openoffice.org3");
-        }
+        return officeHome;
     }
 
     public static File getDefaultProfileDir() {
         if (System.getProperty("office.profile") != null) {
             return new File(System.getProperty("office.profile"));
-        }
-        if (PlatformUtils.isWindows()) {
-            return new File(System.getenv("APPDATA"), "OpenOffice.org/3");
-        } else if (PlatformUtils.isMac()) {
-            return new File(System.getProperty("user.home"), "Library/Application Support/OpenOffice.org/3");
         } else {
-            // Linux or Solaris
-            return new File(System.getProperty("user.home"), ".openoffice.org/3");
+            return new File(PlatformUtils.OO_PROFILE_DIR_PATH);
         }
     }
 
