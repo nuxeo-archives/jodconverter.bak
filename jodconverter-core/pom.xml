@@ -158,15 +158,15 @@
 
   <distributionManagement>
     <repository>
-      <id>public-releases</id>
+      <id>vendor-releases</id>
       <url>
-        http://maven.in.nuxeo.com/nexus/content/repositories/public-releases
+        https://maven.nuxeo.org/nexus/content/repositories/vendor-releases/
       </url>
     </repository>
     <snapshotRepository>
-      <id>public-snapshots</id>
+      <id>vendor-snapshots</id>
       <url>
-        http://maven.in.nuxeo.com/nexus/content/repositories/public-snapshots
+        https://maven.nuxeo.org/nexus/content/repositories/vendor-snapshots/
       </url>
       <uniqueVersion>true</uniqueVersion>
     </snapshotRepository>
