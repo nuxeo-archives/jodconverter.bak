@@ -97,7 +97,7 @@ public class PlatformUtils {
      */
     public static String findOfficeHome() {
         if (officeHome == null) {
-            String[] homeList = null;
+            String[] homeList = new String[0];
             if (isLinux()) {
                 homeList = LINUX_OO_HOME_PATHS;
             } else if (isMac()) {
@@ -117,7 +117,7 @@ public class PlatformUtils {
      */
     public static String findOfficeProfileDir() {
         if (officeProfileDir == null) {
-            String[] profileDirList = null;
+            String[] profileDirList = new String[0];
             if (isLinux()) {
                 profileDirList = LINUX_OO_PROFILE_PATHS;
             } else if (isMac()) {
