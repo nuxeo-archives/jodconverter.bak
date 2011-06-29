@@ -116,16 +116,16 @@ public class DefaultOfficeManagerConfiguration {
         if (!officeHome.isDirectory()) {
             throw new IllegalStateException("officeHome doesn't exist or is not a directory: " + officeHome);
         } else if (!OfficeUtils.getOfficeExecutable(officeHome).isFile()) {
-            throw new IllegalStateException("invalid officeHome: it doesn't contain soffice.bin: " + officeHome);
+            throw new IllegalStateException("invalid officeHome: couldn't find " + OfficeUtils.getOfficeExecutable(officeHome));
         }
         if (templateProfileDir != null && !isValidProfileDir(templateProfileDir)) {
             throw new IllegalStateException("invalid templateProfileDir: " + templateProfileDir);
         }
-        
+
         if (processManager == null) {
             processManager = findBestProcessManager();
         }
-        
+
         int numInstances = connectionProtocol == OfficeConnectionProtocol.PIPE ? pipeNames.length : portNumbers.length;
         UnoUrl[] unoUrls = new UnoUrl[numInstances];
         for (int i = 0; i < numInstances; i++) {
@@ -144,7 +144,7 @@ public class DefaultOfficeManagerConfiguration {
             return windowsProcessManager.isUsable() ? windowsProcessManager : new PureJavaProcessManager();
         } else {
             // NOTE: UnixProcessManager can't be trusted to work on Solaris
-            // because of the 80-char limit on ps output there  
+            // because of the 80-char limit on ps output there
             return new PureJavaProcessManager();
         }
     }
