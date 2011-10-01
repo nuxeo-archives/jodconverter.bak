@@ -50,10 +50,13 @@ public class PlatformUtils {
     private static final String[] WINDOWS_OO_HOME_PATHS = {
             System.getenv("ProgramFiles") + File.separator + "OpenOffice.org 3",
             System.getenv("ProgramFiles") + File.separator + "LibreOffice 3",
+            System.getenv("ProgramFiles") + File.separator + "LibreOffice 3.4",
             System.getenv("ProgramFiles(x86)") + File.separator
                     + "OpenOffice.org 3",
             System.getenv("ProgramFiles(x86)") + File.separator
-                    + "LibreOffice 3" };
+                    + "LibreOffice 3",
+            System.getenv("ProgramFiles(x86)") + File.separator
+                    + "LibreOffice 3.4" };
 
     private static final String[] LINUX_OO_PROFILE_PATHS = {
             System.getProperty("user.home") + File.separator
