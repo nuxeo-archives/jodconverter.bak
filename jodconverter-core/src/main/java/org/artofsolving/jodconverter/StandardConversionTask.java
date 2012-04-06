@@ -19,25 +19,54 @@
 //
 package org.artofsolving.jodconverter;
 
+import static org.artofsolving.jodconverter.office.OfficeUtils.cast;
+
 import java.io.File;
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.artofsolving.jodconverter.document.DocumentFamily;
 import org.artofsolving.jodconverter.document.DocumentFormat;
 
+import com.sun.star.container.XIndexAccess;
 import com.sun.star.lang.XComponent;
+import com.sun.star.text.XDocumentIndex;
+import com.sun.star.text.XDocumentIndexesSupplier;
+import com.sun.star.text.XTextDocument;
 
+/**
+ * 
+ * Added Map<String, Object> params to control DocumentIndex update
+ * 
+ * @author <a href="mailto:tdelprat@nuxeo.com">Tiry</a>
+ * 
+ */
 public class StandardConversionTask extends AbstractConversionTask {
+
+    public static final String UPDATE_DOCUMENT_INDEX = "updateDocumentIndex";
 
     private final DocumentFormat outputFormat;
 
-    private Map<String,?> defaultLoadProperties;
+    private Map<String, ?> defaultLoadProperties;
+
     private DocumentFormat inputFormat;
 
-    public StandardConversionTask(File inputFile, File outputFile, DocumentFormat outputFormat) {
+    protected final Map<String, Serializable> params;
+
+    public StandardConversionTask(File inputFile, File outputFile,
+            DocumentFormat outputFormat, Map<String, Serializable> params) {
         super(inputFile, outputFile);
         this.outputFormat = outputFormat;
+        if (params == null) {
+            params = new HashMap<String, Serializable>();
+        }
+        this.params = params;
+    }
+
+    public StandardConversionTask(File inputFile, File outputFile,
+            DocumentFormat outputFormat) {
+        this(inputFile, outputFile, outputFormat, null);
     }
 
     public void setDefaultLoadProperties(Map<String, ?> defaultLoadProperties) {
@@ -49,8 +78,8 @@ public class StandardConversionTask extends AbstractConversionTask {
     }
 
     @Override
-    protected Map<String,?> getLoadProperties(File inputFile) {
-        Map<String,Object> loadProperties = new HashMap<String,Object>();
+    protected Map<String, ?> getLoadProperties(File inputFile) {
+        Map<String, Object> loadProperties = new HashMap<String, Object>();
         if (defaultLoadProperties != null) {
             loadProperties.putAll(defaultLoadProperties);
         }
@@ -61,9 +90,51 @@ public class StandardConversionTask extends AbstractConversionTask {
     }
 
     @Override
-    protected Map<String,?> getStoreProperties(File outputFile, XComponent document) {
+    protected Map<String, ?> getStoreProperties(File outputFile,
+            XComponent document) {
         DocumentFamily family = OfficeDocumentUtils.getDocumentFamily(document);
         return outputFormat.getStoreProperties(family);
+    }
+
+    @Override
+    protected void handleDocumentLoaded(XComponent document) {
+        if (updateDocumentIndexes()) {
+            doUpdateDocumentIndexes(document);
+        }
+        super.handleDocumentLoaded(document);
+    }
+
+    protected boolean updateDocumentIndexes() {
+        Serializable flag = params.get(UPDATE_DOCUMENT_INDEX);
+        if (flag != null && flag.toString().equalsIgnoreCase("true")) {
+            return true;
+        }
+        return false;
+    }
+
+    protected void doUpdateDocumentIndexes(XComponent document) {
+        XTextDocument xDocument = cast(XTextDocument.class, document);
+        if (xDocument != null) {
+            XDocumentIndexesSupplier indexSupplier = cast(
+                    XDocumentIndexesSupplier.class, xDocument);
+            XDocumentIndex index = null;
+
+            if (indexSupplier != null) {
+                XIndexAccess ia = indexSupplier.getDocumentIndexes();
+                for (int i = 0; i < ia.getCount(); i++) {
+                    Object idx = null;
+                    try {
+                        idx = ia.getByIndex(i);
+                        index = cast(XDocumentIndex.class, idx);
+                        if (index != null) {
+                            index.update();
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
     }
 
 }

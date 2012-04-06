@@ -20,6 +20,7 @@
 package org.artofsolving.jodconverter;
 
 import java.io.File;
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -32,21 +33,23 @@ import org.artofsolving.jodconverter.office.OfficeManager;
 public class OfficeDocumentConverter {
 
     private final OfficeManager officeManager;
+
     private final DocumentFormatRegistry formatRegistry;
 
-    private Map<String,?> defaultLoadProperties = createDefaultLoadProperties();
+    private Map<String, ?> defaultLoadProperties = createDefaultLoadProperties();
 
     public OfficeDocumentConverter(OfficeManager officeManager) {
         this(officeManager, new DefaultDocumentFormatRegistry());
     }
 
-    public OfficeDocumentConverter(OfficeManager officeManager, DocumentFormatRegistry formatRegistry) {
+    public OfficeDocumentConverter(OfficeManager officeManager,
+            DocumentFormatRegistry formatRegistry) {
         this.officeManager = officeManager;
         this.formatRegistry = formatRegistry;
     }
 
-    private Map<String,Object> createDefaultLoadProperties() {
-        Map<String,Object> loadProperties = new HashMap<String,Object>();
+    private Map<String, Object> createDefaultLoadProperties() {
+        Map<String, Object> loadProperties = new HashMap<String, Object>();
         loadProperties.put("Hidden", true);
         loadProperties.put("ReadOnly", true);
         return loadProperties;
@@ -66,10 +69,18 @@ public class OfficeDocumentConverter {
         convert(inputFile, outputFile, outputFormat);
     }
 
-    public void convert(File inputFile, File outputFile, DocumentFormat outputFormat) {
+    public void convert(File inputFile, File outputFile,
+            DocumentFormat outputFormat) {
+        convert(inputFile, outputFile, outputFormat,
+                new HashMap<String, Serializable>());
+    }
+
+    public void convert(File inputFile, File outputFile,
+            DocumentFormat outputFormat, Map<String, Serializable> params) {
         String inputExtension = FilenameUtils.getExtension(inputFile.getName());
         DocumentFormat inputFormat = formatRegistry.getFormatByExtension(inputExtension);
-        StandardConversionTask conversionTask = new StandardConversionTask(inputFile, outputFile, outputFormat);
+        StandardConversionTask conversionTask = new StandardConversionTask(
+                inputFile, outputFile, outputFormat, params);
         conversionTask.setDefaultLoadProperties(defaultLoadProperties);
         conversionTask.setInputFormat(inputFormat);
         officeManager.execute(conversionTask);

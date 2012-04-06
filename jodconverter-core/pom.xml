@@ -5,7 +5,7 @@
 
   <groupId>org.artofsolving.jodconverter</groupId>
   <artifactId>jodconverter-core</artifactId>
-  <version>3.0-NX3.3-SNAPSHOT</version>
+  <version>3.0-NX4-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>JODConverter - Core Library</name>
