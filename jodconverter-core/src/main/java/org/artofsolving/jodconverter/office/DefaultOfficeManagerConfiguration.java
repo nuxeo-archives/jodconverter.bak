@@ -46,6 +46,8 @@ public class DefaultOfficeManagerConfiguration {
 
     private int maxTasksPerProcess = 200;
 
+    private boolean useGnuStyleLongOptions;
+
     private ProcessManager processManager = null; // lazily initialised
 
     public DefaultOfficeManagerConfiguration setOfficeHome(String officeHome)
@@ -137,11 +139,6 @@ public class DefaultOfficeManagerConfiguration {
     }
 
     public OfficeManager buildOfficeManager() throws IllegalStateException {
-        return buildOfficeManager(false);
-    }
-
-    public OfficeManager buildOfficeManager(boolean useGnuStyleLongOptions)
-            throws IllegalStateException {
         if (!officeHome.isDirectory()) {
             throw new IllegalStateException(
                     "officeHome doesn't exist or is not a directory: "
@@ -159,6 +156,11 @@ public class DefaultOfficeManagerConfiguration {
 
         if (processManager == null) {
             processManager = findBestProcessManager();
+        }
+
+        String forceOptionStyle = System.getProperty("jod.office.gnustyleoptions.force");
+        if (forceOptionStyle != null) {
+            useGnuStyleLongOptions = Boolean.parseBoolean(forceOptionStyle);
         }
 
         int numInstances = connectionProtocol == OfficeConnectionProtocol.PIPE ? pipeNames.length
@@ -207,6 +209,10 @@ public class DefaultOfficeManagerConfiguration {
         File setupXcu = new File(profileDir,
                 "user/registry/data/org/openoffice/Setup.xcu");
         return setupXcu.exists();
+    }
+
+    public void setUseGnuStyleLongOptions(boolean useGnuStyleLongOptions) {
+        this.useGnuStyleLongOptions = useGnuStyleLongOptions;
     }
 
 }

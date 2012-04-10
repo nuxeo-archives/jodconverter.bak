@@ -22,7 +22,6 @@ package org.artofsolving.jodconverter.office;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -53,6 +52,10 @@ class OfficeProcess {
 
     protected static String COMMAND_ARG_PREFIX = "-";
 
+    protected static OfficeVersionDescriptor versionDescriptor = null;
+
+    protected static final int BUG_WORKAROUND_WAIT_LOOP = 10;
+
     public OfficeProcess(File officeHome, UnoUrl unoUrl,
             File templateProfileDir, ProcessManager processManager) {
         this(officeHome, unoUrl, templateProfileDir, processManager, false);
@@ -73,6 +76,27 @@ class OfficeProcess {
         }
     }
 
+    protected void determineOfficeVersion() throws IOException {
+        List<String> command = new ArrayList<String>();
+        File executable = OfficeUtils.getOfficeExecutable(officeHome);
+        command.add(executable.getAbsolutePath());
+        command.add("-version");
+        ProcessBuilder processBuilder = new ProcessBuilder(command);
+        processBuilder.redirectErrorStream(true);
+        if (PlatformUtils.isWindows()) {
+            addBasisAndUrePaths(processBuilder);
+        }
+        Process checkProcess = processBuilder.start();
+        try {
+            checkProcess.waitFor();
+        } catch (InterruptedException e) {
+            // NOP
+        }
+        InputStream in = checkProcess.getInputStream();
+        String versionCheckOutput = read(in);
+        versionDescriptor = new OfficeVersionDescriptor(versionCheckOutput);
+    }
+
     private String read(InputStream in) throws IOException {
         StringBuilder sb = new StringBuilder();
         if (in.available() > 0) {
@@ -90,6 +114,19 @@ class OfficeProcess {
     }
 
     public void start() throws IOException {
+        if (versionDescriptor == null) {
+            determineOfficeVersion();
+            if (versionDescriptor.useGnuStyleLongOptions()) {
+                COMMAND_ARG_PREFIX = "--";
+            } else {
+                COMMAND_ARG_PREFIX = "-";
+            }
+        }
+        logger.info("String OfficeProcess " + versionDescriptor.toString());
+        doStart(false);
+    }
+
+    protected void doStart(boolean retry) throws IOException {
         String processRegex = "soffice.*"
                 + Pattern.quote(unoUrl.getAcceptString());
         String existingPid = processManager.findPid(processRegex);
@@ -99,13 +136,17 @@ class OfficeProcess {
                             "a process with acceptString '%s' is already running; pid %s",
                             unoUrl.getAcceptString(), existingPid));
         }
-        prepareInstanceProfileDir();
+
+        if (!retry) {
+            prepareInstanceProfileDir();
+        }
+
         List<String> command = new ArrayList<String>();
         File executable = OfficeUtils.getOfficeExecutable(officeHome);
         command.add(executable.getAbsolutePath());
         command.add(COMMAND_ARG_PREFIX + "accept=" + unoUrl.getAcceptString()
                 + ";urp;");
-        command.add(COMMAND_ARG_PREFIX + "env:UserInstallation="
+        command.add("-env:UserInstallation="
                 + OfficeUtils.toUrl(instanceProfileDir));
         command.add(COMMAND_ARG_PREFIX + "headless");
         command.add(COMMAND_ARG_PREFIX + "nocrashreport");
@@ -123,25 +164,41 @@ class OfficeProcess {
                 "starting process with acceptString '%s' and profileDir '%s'",
                 unoUrl, instanceProfileDir));
         process = processBuilder.start();
+
+        if (versionDescriptor.hasUserEnvBug()) {
+            boolean restarted = false;
+            logger.warning("Apply workaround for LibreOffice user env bug");
+            for (int nbTry = 0; nbTry < BUG_WORKAROUND_WAIT_LOOP; nbTry++) {
+                try {
+                    // wait for process to start ... and automatically exit ...
+                    Thread.sleep(2000);
+                } catch (Exception e) {
+                }
+                pid = processManager.findPid(processRegex);
+                if (pid == null) {
+                    logger.warning("started process, but died : bug is confimed => restarting");
+                    process = processBuilder.start();
+                    restarted = true;
+                    break;
+                }
+            }
+            if (restarted) {
+                logger.warning("process restarted");
+            } else {
+                logger.warning("process did not exit as expected ... hope for the best");
+            }
+        }
         try {
-            // wait for process to start for real
+            // wait for process to start ... and automatically exit ...
             Thread.sleep(1000);
         } catch (Exception e) {
         }
         pid = processManager.findPid(processRegex);
         if (pid == null) {
             logger.warning("started process, but no pid : is it dead?");
-
-            InputStream in = process.getInputStream();
-            String output = read(in);
-            if (output.isEmpty()) {
-                logger.warning("Process output = " + output);
-            }
-            if ("-".equals(COMMAND_ARG_PREFIX)) {
-                COMMAND_ARG_PREFIX = "--";
-                logger.info("restarting with new OpenOffice/LibreOffice args synthax");
-                start();
-            }
+            // if (!retry) {
+            // doStart(true);
+            // }
         } else {
             logger.info("started process : pid = " + pid);
         }
@@ -150,6 +207,7 @@ class OfficeProcess {
     private File getInstanceProfileDir(UnoUrl unoUrl) {
         String dirName = ".jodconverter_"
                 + unoUrl.getAcceptString().replace(',', '_').replace('=', '-');
+        dirName = dirName + "_" + Thread.currentThread().getId();
         return new File(System.getProperty("java.io.tmpdir"), dirName);
     }
 
