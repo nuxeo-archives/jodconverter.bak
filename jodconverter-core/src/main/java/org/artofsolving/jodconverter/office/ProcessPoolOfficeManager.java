@@ -30,28 +30,43 @@ import org.artofsolving.jodconverter.process.ProcessManager;
 class ProcessPoolOfficeManager implements OfficeManager {
 
     private final BlockingQueue<PooledOfficeManager> pool;
+
     private final PooledOfficeManager[] pooledManagers;
+
     private final long taskQueueTimeout;
 
     private volatile boolean running = false;
 
     private final Logger logger = Logger.getLogger(ProcessPoolOfficeManager.class.getName());
 
-    public ProcessPoolOfficeManager(File officeHome, UnoUrl[] unoUrls, File templateProfileDir,
-            long taskQueueTimeout, long taskExecutionTimeout, int maxTasksPerProcess, ProcessManager processManager) {
+    public ProcessPoolOfficeManager(File officeHome, UnoUrl[] unoUrls,
+            File templateProfileDir, long taskQueueTimeout,
+            long taskExecutionTimeout, int maxTasksPerProcess,
+            ProcessManager processManager) {
+        this(officeHome, unoUrls, templateProfileDir, taskQueueTimeout,
+                taskExecutionTimeout, maxTasksPerProcess, processManager, false);
+    }
+
+    public ProcessPoolOfficeManager(File officeHome, UnoUrl[] unoUrls,
+            File templateProfileDir, long taskQueueTimeout,
+            long taskExecutionTimeout, int maxTasksPerProcess,
+            ProcessManager processManager, boolean useGnuStyleLongOptions) {
         this.taskQueueTimeout = taskQueueTimeout;
         pool = new ArrayBlockingQueue<PooledOfficeManager>(unoUrls.length);
         pooledManagers = new PooledOfficeManager[unoUrls.length];
         for (int i = 0; i < unoUrls.length; i++) {
-            PooledOfficeManagerSettings settings = new PooledOfficeManagerSettings(unoUrls[i]);
+            PooledOfficeManagerSettings settings = new PooledOfficeManagerSettings(
+                    unoUrls[i]);
             settings.setTemplateProfileDir(templateProfileDir);
             settings.setOfficeHome(officeHome);
             settings.setTaskExecutionTimeout(taskExecutionTimeout);
             settings.setMaxTasksPerProcess(maxTasksPerProcess);
             settings.setProcessManager(processManager);
+            settings.setUseGnuStyleLongOptions(useGnuStyleLongOptions);
             pooledManagers[i] = new PooledOfficeManager(settings);
         }
-        logger.info("ProcessManager implementation is " + processManager.getClass().getSimpleName());
+        logger.info("ProcessManager implementation is "
+                + processManager.getClass().getSimpleName());
     }
 
     public synchronized void start() throws OfficeException {
@@ -62,9 +77,11 @@ class ProcessPoolOfficeManager implements OfficeManager {
         running = true;
     }
 
-    public void execute(OfficeTask task) throws IllegalStateException, OfficeException {
+    public void execute(OfficeTask task) throws IllegalStateException,
+            OfficeException {
         if (!running) {
-            throw new IllegalStateException("this OfficeManager is currently stopped");
+            throw new IllegalStateException(
+                    "this OfficeManager is currently stopped");
         }
         PooledOfficeManager manager = null;
         try {

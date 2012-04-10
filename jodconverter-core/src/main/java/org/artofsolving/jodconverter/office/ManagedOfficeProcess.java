@@ -33,15 +33,21 @@ class ManagedOfficeProcess {
     private final ManagedOfficeProcessSettings settings;
 
     private final OfficeProcess process;
+
     private final OfficeConnection connection;
 
-    private ExecutorService executor = Executors.newSingleThreadExecutor(new NamedThreadFactory("OfficeProcessThread"));
+    private ExecutorService executor = Executors.newSingleThreadExecutor(new NamedThreadFactory(
+            "OfficeProcessThread"));
 
     private final Logger logger = Logger.getLogger(getClass().getName());
 
-    public ManagedOfficeProcess(ManagedOfficeProcessSettings settings) throws OfficeException {
+    public ManagedOfficeProcess(ManagedOfficeProcessSettings settings)
+            throws OfficeException {
         this.settings = settings;
-        process = new OfficeProcess(settings.getOfficeHome(), settings.getUnoUrl(), settings.getTemplateProfileDir(), settings.getProcessManager());
+        process = new OfficeProcess(settings.getOfficeHome(),
+                settings.getUnoUrl(), settings.getTemplateProfileDir(),
+                settings.getProcessManager(),
+                settings.isUseGnuStyleLongOptions());
         connection = new OfficeConnection(settings.getUnoUrl());
     }
 
@@ -77,10 +83,10 @@ class ManagedOfficeProcess {
 
     public void restartAndWait() {
         Future<?> future = executor.submit(new Runnable() {
-           public void run() {
-               doStopProcess();
-               doStartProcessAndConnect();
-            } 
+            public void run() {
+                doStopProcess();
+                doStartProcessAndConnect();
+            }
         });
         try {
             future.get();
@@ -91,10 +97,10 @@ class ManagedOfficeProcess {
 
     public void restartDueToTaskTimeout() {
         executor.execute(new Runnable() {
-           public void run() {
+            public void run() {
                 doTerminateProcess();
                 // will cause unexpected disconnection and subsequent restart
-            } 
+            }
         });
     }
 
@@ -103,8 +109,8 @@ class ManagedOfficeProcess {
             public void run() {
                 doEnsureProcessExited();
                 doStartProcessAndConnect();
-            } 
-         });
+            }
+        });
     }
 
     private void doStartProcessAndConnect() throws OfficeException {
@@ -120,13 +126,15 @@ class ManagedOfficeProcess {
                 }
             }.execute(settings.getRetryInterval(), settings.getRetryTimeout());
         } catch (Exception exception) {
-            throw new OfficeException("could not establish connection", exception);
+            throw new OfficeException("could not establish connection",
+                    exception);
         }
     }
 
     private void doStopProcess() {
         try {
-            XDesktop desktop = OfficeUtils.cast(XDesktop.class, connection.getService(OfficeUtils.SERVICE_DESKTOP));
+            XDesktop desktop = OfficeUtils.cast(XDesktop.class,
+                    connection.getService(OfficeUtils.SERVICE_DESKTOP));
             desktop.terminate();
         } catch (DisposedException disposedException) {
             // expected
@@ -139,7 +147,8 @@ class ManagedOfficeProcess {
 
     private void doEnsureProcessExited() throws OfficeException {
         try {
-            int exitCode = process.getExitCode(settings.getRetryInterval(), settings.getRetryTimeout());
+            int exitCode = process.getExitCode(settings.getRetryInterval(),
+                    settings.getRetryTimeout());
             logger.info("process exited with code " + exitCode);
         } catch (RetryTimeoutException retryTimeoutException) {
             doTerminateProcess();
@@ -149,7 +158,8 @@ class ManagedOfficeProcess {
 
     private void doTerminateProcess() {
         try {
-            int exitCode = process.forciblyTerminate(settings.getRetryInterval(), settings.getRetryTimeout());
+            int exitCode = process.forciblyTerminate(
+                    settings.getRetryInterval(), settings.getRetryTimeout());
             logger.info("process forcibly terminated with code " + exitCode);
         } catch (Exception exception) {
             throw new OfficeException("could not terminate process", exception);

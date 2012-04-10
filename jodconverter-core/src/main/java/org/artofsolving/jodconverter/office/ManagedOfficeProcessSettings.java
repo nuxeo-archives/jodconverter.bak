@@ -27,14 +27,22 @@ import org.artofsolving.jodconverter.process.PureJavaProcessManager;
 class ManagedOfficeProcessSettings {
 
     public static final long DEFAULT_RETRY_TIMEOUT = 30000L;
+
     public static final long DEFAULT_RETRY_INTERVAL = 250L;
 
     private final UnoUrl unoUrl;
+
     private File officeHome = OfficeUtils.getDefaultOfficeHome();
+
     private File templateProfileDir;
+
     private ProcessManager processManager = new PureJavaProcessManager();
+
     private long retryTimeout = DEFAULT_RETRY_TIMEOUT;
+
     private long retryInterval = DEFAULT_RETRY_INTERVAL;
+
+    protected boolean useGnuStyleLongOptions = false;
 
     public ManagedOfficeProcessSettings(UnoUrl unoUrl) {
         this.unoUrl = unoUrl;
@@ -82,6 +90,14 @@ class ManagedOfficeProcessSettings {
 
     public void setRetryInterval(long retryInterval) {
         this.retryInterval = retryInterval;
+    }
+
+    public boolean isUseGnuStyleLongOptions() {
+        return useGnuStyleLongOptions;
+    }
+
+    public void setUseGnuStyleLongOptions(boolean useGnuStyleLongOptions) {
+        this.useGnuStyleLongOptions = useGnuStyleLongOptions;
     }
 
 }

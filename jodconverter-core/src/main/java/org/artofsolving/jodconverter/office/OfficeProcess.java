@@ -21,6 +21,8 @@ package org.artofsolving.jodconverter.office;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -34,68 +36,136 @@ import org.artofsolving.jodconverter.util.PlatformUtils;
 class OfficeProcess {
 
     private final File officeHome;
+
     private final UnoUrl unoUrl;
+
     private final File templateProfileDir;
+
     private final File instanceProfileDir;
+
     private final ProcessManager processManager;
 
     private Process process;
+
     private String pid;
 
     private final Logger logger = Logger.getLogger(getClass().getName());
 
-    public OfficeProcess(File officeHome, UnoUrl unoUrl, File templateProfileDir, ProcessManager processManager) {
+    protected static String COMMAND_ARG_PREFIX = "-";
+
+    public OfficeProcess(File officeHome, UnoUrl unoUrl,
+            File templateProfileDir, ProcessManager processManager) {
+        this(officeHome, unoUrl, templateProfileDir, processManager, false);
+    }
+
+    public OfficeProcess(File officeHome, UnoUrl unoUrl,
+            File templateProfileDir, ProcessManager processManager,
+            boolean useGnuStyleLongOptions) {
         this.officeHome = officeHome;
         this.unoUrl = unoUrl;
         this.templateProfileDir = templateProfileDir;
         this.instanceProfileDir = getInstanceProfileDir(unoUrl);
         this.processManager = processManager;
+        if (useGnuStyleLongOptions) {
+            COMMAND_ARG_PREFIX = "--";
+        } else {
+            COMMAND_ARG_PREFIX = "-";
+        }
+    }
+
+    private String read(InputStream in) throws IOException {
+        StringBuilder sb = new StringBuilder();
+        if (in.available() > 0) {
+            byte[] buffer = new byte[in.available()];
+            try {
+                int read;
+                while ((read = in.read(buffer)) != -1) {
+                    sb.append(new String(buffer, 0, read));
+                }
+            } finally {
+                in.close();
+            }
+        }
+        return sb.toString();
     }
 
     public void start() throws IOException {
-        String processRegex = "soffice.*" + Pattern.quote(unoUrl.getAcceptString());
+        String processRegex = "soffice.*"
+                + Pattern.quote(unoUrl.getAcceptString());
         String existingPid = processManager.findPid(processRegex);
         if (existingPid != null) {
-            throw new IllegalStateException(String.format("a process with acceptString '%s' is already running; pid %s", unoUrl.getAcceptString(), existingPid));
+            throw new IllegalStateException(
+                    String.format(
+                            "a process with acceptString '%s' is already running; pid %s",
+                            unoUrl.getAcceptString(), existingPid));
         }
         prepareInstanceProfileDir();
         List<String> command = new ArrayList<String>();
         File executable = OfficeUtils.getOfficeExecutable(officeHome);
         command.add(executable.getAbsolutePath());
-        command.add("-accept=" + unoUrl.getAcceptString() + ";urp;");
-        command.add("-env:UserInstallation=" + OfficeUtils.toUrl(instanceProfileDir));
-        command.add("-headless");
-        command.add("-nocrashreport");
-        command.add("-nodefault");
-        command.add("-nofirststartwizard");
-        command.add("-nolockcheck");
-        command.add("-nologo");
-        command.add("-norestore");
+        command.add(COMMAND_ARG_PREFIX + "accept=" + unoUrl.getAcceptString()
+                + ";urp;");
+        command.add(COMMAND_ARG_PREFIX + "env:UserInstallation="
+                + OfficeUtils.toUrl(instanceProfileDir));
+        command.add(COMMAND_ARG_PREFIX + "headless");
+        command.add(COMMAND_ARG_PREFIX + "nocrashreport");
+        command.add(COMMAND_ARG_PREFIX + "nodefault");
+        command.add(COMMAND_ARG_PREFIX + "nofirststartwizard");
+        command.add(COMMAND_ARG_PREFIX + "nolockcheck");
+        command.add(COMMAND_ARG_PREFIX + "nologo");
+        command.add(COMMAND_ARG_PREFIX + "norestore");
         ProcessBuilder processBuilder = new ProcessBuilder(command);
+        processBuilder.redirectErrorStream(true);
         if (PlatformUtils.isWindows()) {
             addBasisAndUrePaths(processBuilder);
         }
-        logger.info(String.format("starting process with acceptString '%s' and profileDir '%s'", unoUrl, instanceProfileDir));
+        logger.info(String.format(
+                "starting process with acceptString '%s' and profileDir '%s'",
+                unoUrl, instanceProfileDir));
         process = processBuilder.start();
+        try {
+            // wait for process to start for real
+            Thread.sleep(1000);
+        } catch (Exception e) {
+        }
         pid = processManager.findPid(processRegex);
-        logger.info("started process" + (pid != null ? "; pid = " + pid : ""));
+        if (pid == null) {
+            logger.warning("started process, but no pid : is it dead?");
+
+            InputStream in = process.getInputStream();
+            String output = read(in);
+            if (output.isEmpty()) {
+                logger.warning("Process output = " + output);
+            }
+            if ("-".equals(COMMAND_ARG_PREFIX)) {
+                COMMAND_ARG_PREFIX = "--";
+                logger.info("restarting with new OpenOffice/LibreOffice args synthax");
+                start();
+            }
+        } else {
+            logger.info("started process : pid = " + pid);
+        }
     }
 
     private File getInstanceProfileDir(UnoUrl unoUrl) {
-        String dirName = ".jodconverter_" + unoUrl.getAcceptString().replace(',', '_').replace('=', '-');
+        String dirName = ".jodconverter_"
+                + unoUrl.getAcceptString().replace(',', '_').replace('=', '-');
         return new File(System.getProperty("java.io.tmpdir"), dirName);
     }
 
     private void prepareInstanceProfileDir() throws OfficeException {
         if (instanceProfileDir.exists()) {
-            logger.warning(String.format("profile dir '%s' already exists; deleting", instanceProfileDir));
+            logger.warning(String.format(
+                    "profile dir '%s' already exists; deleting",
+                    instanceProfileDir));
             deleteProfileDir();
         }
         if (templateProfileDir != null) {
             try {
                 FileUtils.copyDirectory(templateProfileDir, instanceProfileDir);
             } catch (IOException ioException) {
-                throw new OfficeException("failed to create profileDir", ioException);
+                throw new OfficeException("failed to create profileDir",
+                        ioException);
             }
         }
     }
@@ -110,8 +180,10 @@ class OfficeProcess {
         }
     }
 
-    private void addBasisAndUrePaths(ProcessBuilder processBuilder) throws IOException {
-        // see http://wiki.services.openoffice.org/wiki/ODF_Toolkit/Efforts/Three-Layer_OOo
+    private void addBasisAndUrePaths(ProcessBuilder processBuilder)
+            throws IOException {
+        // see
+        // http://wiki.services.openoffice.org/wiki/ODF_Toolkit/Efforts/Three-Layer_OOo
         File basisLink = new File(officeHome, "basis-link");
         if (!basisLink.isFile()) {
             logger.fine("no %OFFICE_HOME%/basis-link found; assuming it's OOo 2.x and we don't need to append URE and Basic paths");
@@ -124,8 +196,9 @@ class OfficeProcess {
         String ureLinkText = FileUtils.readFileToString(ureLink).trim();
         File ureHome = new File(basisHome, ureLinkText);
         File ureBin = new File(ureHome, "bin");
-        Map<String,String> environment = processBuilder.environment();
-        // Windows environment variables are case insensitive but Java maps are not :-/
+        Map<String, String> environment = processBuilder.environment();
+        // Windows environment variables are case insensitive but Java maps are
+        // not :-/
         // so let's make sure we modify the existing key
         String pathKey = "PATH";
         for (String key : environment.keySet()) {
@@ -133,7 +206,8 @@ class OfficeProcess {
                 pathKey = key;
             }
         }
-        String path = environment.get(pathKey) + ";" + ureBin.getAbsolutePath() + ";" + basisProgram.getAbsolutePath();
+        String path = environment.get(pathKey) + ";" + ureBin.getAbsolutePath()
+                + ";" + basisProgram.getAbsolutePath();
         logger.fine(String.format("setting %s to \"%s\"", pathKey, path));
         environment.put(pathKey, path);
     }
@@ -151,9 +225,9 @@ class OfficeProcess {
     }
 
     private class ExitCodeRetryable extends Retryable {
-        
+
         private int exitCode;
-        
+
         protected void attempt() throws TemporaryException, Exception {
             try {
                 exitCode = process.exitValue();
@@ -161,14 +235,15 @@ class OfficeProcess {
                 throw new TemporaryException(illegalThreadStateException);
             }
         }
-        
+
         public int getExitCode() {
             return exitCode;
         }
 
     }
-    
-    public int getExitCode(long retryInterval, long retryTimeout) throws RetryTimeoutException {
+
+    public int getExitCode(long retryInterval, long retryTimeout)
+            throws RetryTimeoutException {
         try {
             ExitCodeRetryable retryable = new ExitCodeRetryable();
             retryable.execute(retryInterval, retryTimeout);
@@ -176,12 +251,15 @@ class OfficeProcess {
         } catch (RetryTimeoutException retryTimeoutException) {
             throw retryTimeoutException;
         } catch (Exception exception) {
-            throw new OfficeException("could not get process exit code", exception);
+            throw new OfficeException("could not get process exit code",
+                    exception);
         }
     }
 
-    public int forciblyTerminate(long retryInterval, long retryTimeout) throws IOException, RetryTimeoutException {
-        logger.info(String.format("trying to forcibly terminate process: '" + unoUrl + "'" + (pid != null ? " (pid " + pid  + ")" : "")));
+    public int forciblyTerminate(long retryInterval, long retryTimeout)
+            throws IOException, RetryTimeoutException {
+        logger.info(String.format("trying to forcibly terminate process: '"
+                + unoUrl + "'" + (pid != null ? " (pid " + pid + ")" : "")));
         processManager.kill(process, pid);
         return getExitCode(retryInterval, retryTimeout);
     }
