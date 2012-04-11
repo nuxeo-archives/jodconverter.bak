@@ -33,12 +33,12 @@ public class ProcessManagerTest {
             throw new SkipException("UnixProcessManager only works on Unix");
         }
         ProcessManager processManager = new UnixProcessManager();
-        Process process = new ProcessBuilder("sleep", "5s").start();
-        String pid = processManager.findPid("sleep 5s");
+        Process process = new ProcessBuilder("sleep", "30s").start();
+        String pid = processManager.findPid("sleep 30s");
         Assert.assertNotNull(pid);
         Assert.assertEquals(pid, ReflectionUtils.getPrivateField(process, "pid").toString());
         processManager.kill(process, pid);
-        Assert.assertNull(processManager.findPid("sleep 5s"));
+        Assert.assertNull(processManager.findPid("sleep 30s"));
     }
 
     public void macProcessManager() throws Exception {
@@ -46,12 +46,12 @@ public class ProcessManagerTest {
             throw new SkipException("MacProcessManager only works on Mac");
         }
         ProcessManager processManager = new MacProcessManager();
-        Process process = new ProcessBuilder("sleep", "5s").start();
-        String pid = processManager.findPid("sleep 5s");
+        Process process = new ProcessBuilder("sleep", "30s").start();
+        String pid = processManager.findPid("sleep 30s");
         Assert.assertNotNull(pid);
         Assert.assertEquals(pid, ReflectionUtils.getPrivateField(process, "pid").toString());
         processManager.kill(process, pid);
-        Assert.assertNull(processManager.findPid("sleep 5s"));
+        Assert.assertNull(processManager.findPid("sleep 30s"));
     }
 
 }

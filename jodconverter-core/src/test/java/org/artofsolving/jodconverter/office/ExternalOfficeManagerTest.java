@@ -32,7 +32,7 @@ public class ExternalOfficeManagerTest {
         UnoUrl unoUrl = UnoUrl.socket(2002);
         OfficeProcess officeProcess = new OfficeProcess(OfficeUtils.getDefaultOfficeHome(), unoUrl, null, new PureJavaProcessManager());
         officeProcess.start();
-        Thread.sleep(2000);
+        Thread.sleep(10000);
         
         ExternalOfficeManager manager = new ExternalOfficeManager(unoUrl, true);
         manager.start();
