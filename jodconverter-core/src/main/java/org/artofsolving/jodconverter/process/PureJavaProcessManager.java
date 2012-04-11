@@ -21,12 +21,18 @@ package org.artofsolving.jodconverter.process;
 
 public class PureJavaProcessManager implements ProcessManager {
 
+    protected static final boolean PID_ENABLED = false;
+
     public String findPid(String regex) {
         return null;
     }
 
     public void kill(Process process, String pid) {
         process.destroy();
+    }
+
+    public boolean canFindPid() {
+        return PID_ENABLED;
     }
 
 }

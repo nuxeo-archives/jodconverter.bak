@@ -154,6 +154,7 @@ class ManagedOfficeProcess {
             doTerminateProcess();
         }
         process.deleteProfileDir();
+        process.deleteFakeBundlesDir();
     }
 
     private void doTerminateProcess() {

@@ -21,6 +21,7 @@ package org.artofsolving.jodconverter.process;
 
 public class MacProcessManager extends UnixProcessManager {
 
+    @Override
     protected String[] psCommand() {
         return new String[] { "/bin/ps", "-e", "-o", "pid,command" };
     }

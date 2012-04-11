@@ -42,6 +42,8 @@ class OfficeProcess {
 
     private final File instanceProfileDir;
 
+    private final File fakeBundlesDir;
+
     private final ProcessManager processManager;
 
     private Process process;
@@ -53,8 +55,6 @@ class OfficeProcess {
     protected static String COMMAND_ARG_PREFIX = "-";
 
     protected static OfficeVersionDescriptor versionDescriptor = null;
-
-    protected static final int BUG_WORKAROUND_WAIT_LOOP = 10;
 
     public OfficeProcess(File officeHome, UnoUrl unoUrl,
             File templateProfileDir, ProcessManager processManager) {
@@ -68,6 +68,7 @@ class OfficeProcess {
         this.unoUrl = unoUrl;
         this.templateProfileDir = templateProfileDir;
         this.instanceProfileDir = getInstanceProfileDir(unoUrl);
+        this.fakeBundlesDir = getFakeBundlesDir();
         this.processManager = processManager;
         if (useGnuStyleLongOptions) {
             COMMAND_ARG_PREFIX = "--";
@@ -122,7 +123,7 @@ class OfficeProcess {
                 COMMAND_ARG_PREFIX = "-";
             }
         }
-        logger.info("String OfficeProcess " + versionDescriptor.toString());
+        logger.fine("OfficeProcess info:" + versionDescriptor.toString());
         doStart(false);
     }
 
@@ -139,6 +140,7 @@ class OfficeProcess {
 
         if (!retry) {
             prepareInstanceProfileDir();
+            prepareFakeBundlesDir();
         }
 
         List<String> command = new ArrayList<String>();
@@ -148,6 +150,8 @@ class OfficeProcess {
                 + ";urp;");
         command.add("-env:UserInstallation="
                 + OfficeUtils.toUrl(instanceProfileDir));
+        command.add("-env:BUNDLED_EXTENSIONS="
+                +fakeBundlesDir.toURL().toString());
         command.add(COMMAND_ARG_PREFIX + "headless");
         command.add(COMMAND_ARG_PREFIX + "nocrashreport");
         command.add(COMMAND_ARG_PREFIX + "nodefault");
@@ -164,43 +168,20 @@ class OfficeProcess {
                 "starting process with acceptString '%s' and profileDir '%s'",
                 unoUrl, instanceProfileDir));
         process = processBuilder.start();
-
-        if (versionDescriptor.hasUserEnvBug()) {
-            boolean restarted = false;
-            logger.warning("Apply workaround for LibreOffice user env bug");
-            for (int nbTry = 0; nbTry < BUG_WORKAROUND_WAIT_LOOP; nbTry++) {
-                try {
-                    // wait for process to start ... and automatically exit ...
-                    Thread.sleep(2000);
-                } catch (Exception e) {
-                }
-                pid = processManager.findPid(processRegex);
-                if (pid == null) {
-                    logger.warning("started process, but died : bug is confimed => restarting");
-                    process = processBuilder.start();
-                    restarted = true;
-                    break;
-                }
-            }
-            if (restarted) {
-                logger.warning("process restarted");
-            } else {
-                logger.warning("process did not exit as expected ... hope for the best");
-            }
-        }
         try {
-            // wait for process to start ... and automatically exit ...
+            // wait for process to start
             Thread.sleep(1000);
         } catch (Exception e) {
         }
-        pid = processManager.findPid(processRegex);
-        if (pid == null) {
-            logger.warning("started process, but no pid : is it dead?");
-            // if (!retry) {
-            // doStart(true);
-            // }
+        if (processManager.canFindPid()) {
+            pid = processManager.findPid(processRegex);
+            if (pid == null) {
+                logger.warning("started process, but no pid : is it dead?");
+            } else {
+                logger.info("started process : pid = " + pid);
+            }
         } else {
-            logger.info("started process : pid = " + pid);
+            logger.info("process started with PureJavaProcessManager - cannot check for pid");
         }
     }
 
@@ -232,6 +213,31 @@ class OfficeProcess {
         if (instanceProfileDir != null) {
             try {
                 FileUtils.deleteDirectory(instanceProfileDir);
+            } catch (IOException ioException) {
+                logger.warning(ioException.getMessage());
+            }
+        }
+    }
+
+    private File getFakeBundlesDir() {
+        String dirName = ".jodconverter_bundlesdir";
+        dirName = dirName + "_" + Thread.currentThread().getId();
+        return new File(System.getProperty("java.io.tmpdir"), dirName);
+    }
+
+    private void prepareFakeBundlesDir() throws OfficeException {
+        if (fakeBundlesDir.exists()) {
+            deleteFakeBundlesDir();
+        }
+        if (fakeBundlesDir != null) {
+            fakeBundlesDir.mkdirs();
+        }
+    }
+
+    public void deleteFakeBundlesDir() {
+        if (fakeBundlesDir != null) {
+            try {
+                FileUtils.deleteDirectory(fakeBundlesDir);
             } catch (IOException ioException) {
                 logger.warning(ioException.getMessage());
             }

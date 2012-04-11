@@ -36,6 +36,8 @@ import org.apache.commons.io.IOUtils;
  */
 public class UnixProcessManager implements ProcessManager {
 
+    protected static final boolean PID_ENABLED = true;
+
     private static final Pattern PS_OUTPUT_LINE = Pattern.compile("^\\s*(\\d+)\\s+(.*)$"); 
 
     protected String[] psCommand() {
@@ -66,6 +68,10 @@ public class UnixProcessManager implements ProcessManager {
         @SuppressWarnings("unchecked")
         List<String> lines = IOUtils.readLines(process.getInputStream());
         return lines;
+    }
+
+    public boolean canFindPid() {
+        return PID_ENABLED;
     }
 
 }

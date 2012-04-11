@@ -15,6 +15,8 @@ import org.apache.commons.io.IOUtils;
  */
 public class WindowsProcessManager implements ProcessManager {
 
+    protected static final boolean PID_ENABLED = true;
+
     private static final Pattern PROCESS_GET_LINE = Pattern.compile("^(.*?)\\s+(\\d+)\\s*$");
 
     public String findPid(String regex) throws IOException {
@@ -58,6 +60,10 @@ public class WindowsProcessManager implements ProcessManager {
             // sorry for the interruption
         }
         return lines;
+    }
+
+    public boolean canFindPid() {
+        return PID_ENABLED;
     }
 
 }

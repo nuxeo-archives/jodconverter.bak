@@ -13,8 +13,8 @@ public class OfficeVersionDescriptor {
     private final Logger logger = Logger.getLogger(getClass().getName());
 
     public OfficeVersionDescriptor(String checkString) {
-        logger.info("Building " + this.getClass().getSimpleName() + ": "
-                + checkString);
+        logger.fine("Building " + this.getClass().getSimpleName() + ": "
+                + checkString.trim());
         String versionLabel = checkString;
         String[] lines = checkString.split("\\n");
         if (lines.length > 1) {
@@ -32,9 +32,7 @@ public class OfficeVersionDescriptor {
             productName = versionLabel;
             version = "???";
         }
-        logger.info("soffice info : " + productName + " version " + version
-                + " useGnuStyleLongOptions:"
-                + Boolean.toString(useGnuStyleLongOptions));
+        logger.info("soffice info: " + toString());
     }
 
     public String getProductName() {
@@ -57,22 +55,10 @@ public class OfficeVersionDescriptor {
         return useGnuStyleLongOptions;
     }
 
-    public boolean hasUserEnvBug() {
-        if (productName.toLowerCase().contains("libreoffice")) {
-            if (version.contains("3.4") || version.contains("3.5")) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     @Override
     public String toString() {
-        StringBuffer sb = new StringBuffer();
-        sb.append(this.getClass().getSimpleName());
-        sb.append("\n" + getProductName());
-        sb.append("\n" + getVersion());
-        sb.append("\n useGnuStyleLongOptions :" + useGnuStyleLongOptions());
-        return sb.toString();
+        return String.format(
+            "Product: %s - Version: %s - useGnuStyleLongOptions: %s",
+            getProductName(), getVersion(), useGnuStyleLongOptions());
     }
 }
