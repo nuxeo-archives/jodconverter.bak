@@ -82,6 +82,12 @@ class OfficeProcess {
         File executable = OfficeUtils.getOfficeExecutable(officeHome);
         command.add(executable.getAbsolutePath());
         command.add("-help");
+        command.add("-headless");
+        command.add("-nocrashreport");
+        command.add("-nofirststartwizard");
+        command.add("-nolockcheck");
+        command.add("-nologo");
+        command.add("-norestore");
         ProcessBuilder processBuilder = new ProcessBuilder(command);
         processBuilder.redirectErrorStream(true);
         if (PlatformUtils.isWindows()) {
