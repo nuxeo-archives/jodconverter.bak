@@ -15,21 +15,31 @@ public class OfficeVersionDescriptor {
     public OfficeVersionDescriptor(String checkString) {
         logger.fine("Building " + this.getClass().getSimpleName() + ": "
                 + checkString.trim());
-        String versionLabel = checkString;
+        String productLine = null;
         String[] lines = checkString.split("\\n");
-        if (lines.length > 1) {
-            if (lines[0].contains("--help")) {
+        for (String line : lines) {
+            if (line.contains("--help")) {
                 useGnuStyleLongOptions = true;
-                versionLabel = lines[1];
+            }
+            String lowerLine = line.trim().toLowerCase();
+            if (lowerLine.startsWith("openoffice") || lowerLine.startsWith("libreoffice")) {
+                productLine = line.trim();
             }
         }
-        versionLabel = versionLabel.trim();
-        String[] parts = versionLabel.split(" ");
-        if (parts.length > 1) {
-            productName = parts[0];
-            version = parts[1];
+        if (productLine != null) {
+            String[] parts = productLine.split(" ");
+            if (parts.length > 0) {
+                productName = parts[0];
+            } else {
+                productName = "???";
+            }
+            if (parts.length > 1) {
+                version = parts[1];
+            } else {
+                version = "???";
+            }
         } else {
-            productName = versionLabel;
+            productName = "???";
             version = "???";
         }
         logger.info("soffice info: " + toString());

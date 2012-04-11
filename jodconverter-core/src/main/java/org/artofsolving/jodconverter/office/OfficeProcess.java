@@ -156,8 +156,10 @@ class OfficeProcess {
                 + ";urp;");
         command.add("-env:UserInstallation="
                 + OfficeUtils.toUrl(instanceProfileDir));
-        command.add("-env:BUNDLED_EXTENSIONS="
-                +fakeBundlesDir.toURL().toString());
+        if (!PlatformUtils.isWindows()) {
+            command.add("-env:BUNDLED_EXTENSIONS="
+                    + OfficeUtils.toUrl(fakeBundlesDir));
+        }
         command.add(COMMAND_ARG_PREFIX + "headless");
         command.add(COMMAND_ARG_PREFIX + "nocrashreport");
         command.add(COMMAND_ARG_PREFIX + "nodefault");
@@ -226,16 +228,19 @@ class OfficeProcess {
     }
 
     private File getFakeBundlesDir() {
+        if (PlatformUtils.isWindows()) {
+            return null;
+        }
         String dirName = ".jodconverter_bundlesdir";
         dirName = dirName + "_" + Thread.currentThread().getId();
         return new File(System.getProperty("java.io.tmpdir"), dirName);
     }
 
     private void prepareFakeBundlesDir() throws OfficeException {
-        if (fakeBundlesDir.exists()) {
-            deleteFakeBundlesDir();
-        }
         if (fakeBundlesDir != null) {
+            if (fakeBundlesDir.exists()) {
+                deleteFakeBundlesDir();
+            }
             fakeBundlesDir.mkdirs();
         }
     }
