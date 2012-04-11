@@ -81,7 +81,7 @@ class OfficeProcess {
         List<String> command = new ArrayList<String>();
         File executable = OfficeUtils.getOfficeExecutable(officeHome);
         command.add(executable.getAbsolutePath());
-        command.add("-version");
+        command.add("-help");
         ProcessBuilder processBuilder = new ProcessBuilder(command);
         processBuilder.redirectErrorStream(true);
         if (PlatformUtils.isWindows()) {

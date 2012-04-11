@@ -18,7 +18,7 @@ public class OfficeVersionDescriptor {
         String versionLabel = checkString;
         String[] lines = checkString.split("\\n");
         if (lines.length > 1) {
-            if (lines[0].contains("--version")) {
+            if (lines[0].contains("--help")) {
                 useGnuStyleLongOptions = true;
                 versionLabel = lines[1];
             }
