@@ -33,4 +33,6 @@ public interface OfficeManager {
 
     void stop() throws OfficeException;
 
+    OfficeConnection[] getConnection();
+
 }

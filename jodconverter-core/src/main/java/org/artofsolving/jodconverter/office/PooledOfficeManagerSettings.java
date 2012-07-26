@@ -22,9 +22,11 @@ package org.artofsolving.jodconverter.office;
 class PooledOfficeManagerSettings extends ManagedOfficeProcessSettings {
 
     public static final long DEFAULT_TASK_EXECUTION_TIMEOUT = 120000L;
+
     public static final int DEFAULT_MAX_TASKS_PER_PROCESS = 200;
 
     private long taskExecutionTimeout = DEFAULT_TASK_EXECUTION_TIMEOUT;
+
     private int maxTasksPerProcess = DEFAULT_MAX_TASKS_PER_PROCESS;
 
     public PooledOfficeManagerSettings(UnoUrl unoUrl) {
@@ -47,4 +49,11 @@ class PooledOfficeManagerSettings extends ManagedOfficeProcessSettings {
         this.maxTasksPerProcess = maxTasksPerProcess;
     }
 
+    @Override
+    public String toString() {
+        StringBuffer sb = new StringBuffer();
+        sb.append("\ntaskExecutionTimeout :" + taskExecutionTimeout);
+        sb.append("\nmaxTasksPerProcess :" + maxTasksPerProcess);
+        return sb.toString();
+    }
 }

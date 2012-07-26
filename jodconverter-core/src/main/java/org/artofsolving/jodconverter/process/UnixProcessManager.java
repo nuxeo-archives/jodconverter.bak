@@ -38,7 +38,7 @@ public class UnixProcessManager implements ProcessManager {
 
     protected static final boolean PID_ENABLED = true;
 
-    private static final Pattern PS_OUTPUT_LINE = Pattern.compile("^\\s*(\\d+)\\s+(.*)$"); 
+    private static final Pattern PS_OUTPUT_LINE = Pattern.compile("^\\s*(\\d+)\\s+(.*)$");
 
     protected String[] psCommand() {
         return new String[] { "/bin/ps", "-e", "-o", "pid,args" };

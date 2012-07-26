@@ -28,11 +28,15 @@ import java.util.logging.Logger;
 class PooledOfficeManager implements OfficeManager {
 
     private final PooledOfficeManagerSettings settings;
+
     private final ManagedOfficeProcess managedOfficeProcess;
+
     private final SuspendableThreadPoolExecutor taskExecutor;
 
     private volatile boolean stopping = false;
+
     private int taskCount;
+
     private Future<?> currentTask;
 
     private final Logger logger = Logger.getLogger(getClass().getName());
@@ -42,6 +46,7 @@ class PooledOfficeManager implements OfficeManager {
             taskCount = 0;
             taskExecutor.setAvailable(true);
         }
+
         public void disconnected(OfficeConnectionEvent event) {
             taskExecutor.setAvailable(false);
             if (stopping) {
@@ -64,38 +69,46 @@ class PooledOfficeManager implements OfficeManager {
     public PooledOfficeManager(PooledOfficeManagerSettings settings) {
         this.settings = settings;
         managedOfficeProcess = new ManagedOfficeProcess(settings);
-        managedOfficeProcess.getConnection().addConnectionEventListener(connectionEventListener);
-        taskExecutor = new SuspendableThreadPoolExecutor(new NamedThreadFactory("OfficeTaskThread"));
+        managedOfficeProcess.getConnection().addConnectionEventListener(
+                connectionEventListener);
+        taskExecutor = new SuspendableThreadPoolExecutor(
+                new NamedThreadFactory("OfficeTaskThread"));
     }
 
     public void execute(final OfficeTask task) throws OfficeException {
         Future<?> futureTask = taskExecutor.submit(new Runnable() {
             public void run() {
-                if (settings.getMaxTasksPerProcess() > 0 && ++taskCount == settings.getMaxTasksPerProcess() + 1) {
-                    logger.info(String.format("reached limit of %d maxTasksPerProcess: restarting", settings.getMaxTasksPerProcess()));
+                if (settings.getMaxTasksPerProcess() > 0
+                        && ++taskCount == settings.getMaxTasksPerProcess() + 1) {
+                    logger.info(String.format(
+                            "reached limit of %d maxTasksPerProcess: restarting",
+                            settings.getMaxTasksPerProcess()));
                     taskExecutor.setAvailable(false);
                     stopping = true;
                     managedOfficeProcess.restartAndWait();
-                    //FIXME taskCount will be 0 rather than 1 at this point
+                    // FIXME taskCount will be 0 rather than 1 at this point
                 }
                 task.execute(managedOfficeProcess.getConnection());
-             }
-         });
-         currentTask = futureTask;
-         try {
-             futureTask.get(settings.getTaskExecutionTimeout(), TimeUnit.MILLISECONDS);
-         } catch (TimeoutException timeoutException) {
-             managedOfficeProcess.restartDueToTaskTimeout();
-             throw new OfficeException("task did not complete within timeout", timeoutException);
-         } catch (ExecutionException executionException) {
-             if (executionException.getCause() instanceof OfficeException) {
-                 throw (OfficeException) executionException.getCause();
-             } else {
-                 throw new OfficeException("task failed", executionException.getCause());
-             }
-         } catch (Exception exception) {
-             throw new OfficeException("task failed", exception);
-         }
+            }
+        });
+        currentTask = futureTask;
+        try {
+            futureTask.get(settings.getTaskExecutionTimeout(),
+                    TimeUnit.MILLISECONDS);
+        } catch (TimeoutException timeoutException) {
+            managedOfficeProcess.restartDueToTaskTimeout();
+            throw new OfficeException("task did not complete within timeout",
+                    timeoutException);
+        } catch (ExecutionException executionException) {
+            if (executionException.getCause() instanceof OfficeException) {
+                throw (OfficeException) executionException.getCause();
+            } else {
+                throw new OfficeException("task failed",
+                        executionException.getCause());
+            }
+        } catch (Exception exception) {
+            throw new OfficeException("task failed", exception);
+        }
     }
 
     public void start() throws OfficeException {
@@ -109,4 +122,18 @@ class PooledOfficeManager implements OfficeManager {
         managedOfficeProcess.stopAndWait();
     }
 
+    @Override
+    public String toString() {
+        StringBuffer sb = new StringBuffer();
+        sb.append("\nPooledOfficeManager Settings :");
+        sb.append(settings.toString());
+        sb.append("\nManaged Office Process :");
+        sb.append(managedOfficeProcess.toString());
+        return sb.toString();
+    }
+
+    public OfficeConnection[] getConnection() {
+        OfficeConnection[] result = { managedOfficeProcess.getConnection() };
+        return result;
+    }
 }

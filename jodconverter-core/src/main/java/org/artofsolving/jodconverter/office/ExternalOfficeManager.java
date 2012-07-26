@@ -22,11 +22,12 @@ package org.artofsolving.jodconverter.office;
 import java.net.ConnectException;
 
 /**
- * {@link OfficeManager} implementation that connects to an external
- * Office process.
+ * {@link OfficeManager} implementation that connects to an external Office
+ * process.
  * <p>
  * The external Office process needs to be started manually, e.g. from the
  * command line with
+ * 
  * <pre>
  * soffice -accept="socket,host=127.0.0.1,port=2002;urp;"
  * </pre>
@@ -44,13 +45,15 @@ import java.net.ConnectException;
 class ExternalOfficeManager implements OfficeManager {
 
     private final OfficeConnection connection;
+
     private final boolean connectOnStart;
 
     /**
      * @param unoUrl
      * @param connectOnStart should a connection be attempted on
-     *   {@link #start()}? Default is <em>true</em>. If <em>false</em>, a
-     *   connection will only be attempted the first time an {@link OfficeTask} is executed.
+     *            {@link #start()}? Default is <em>true</em>. If <em>false</em>,
+     *            a connection will only be attempted the first time an
+     *            {@link OfficeTask} is executed.
      */
     public ExternalOfficeManager(UnoUrl unoUrl, boolean connectOnStart) {
         connection = new OfficeConnection(unoUrl);
@@ -86,8 +89,15 @@ class ExternalOfficeManager implements OfficeManager {
         try {
             connection.connect();
         } catch (ConnectException connectException) {
-            throw new OfficeException("could not connect to external office process", connectException);
+            throw new OfficeException(
+                    "could not connect to external office process",
+                    connectException);
         }
+    }
+
+    public OfficeConnection[] getConnection() {
+        OfficeConnection[] result = { connection };
+        return result;
     }
 
 }

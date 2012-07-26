@@ -19,9 +19,11 @@
 //
 package org.artofsolving.jodconverter.office;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -49,6 +51,8 @@ class OfficeProcess {
     private Process process;
 
     private String pid;
+
+    private List<String> lastCommand;
 
     private final Logger logger = Logger.getLogger(getClass().getName());
 
@@ -123,6 +127,8 @@ class OfficeProcess {
     public void start() throws IOException {
         if (versionDescriptor == null) {
             determineOfficeVersion();
+        }
+        if (versionDescriptor != null) {
             if (versionDescriptor.useGnuStyleLongOptions()) {
                 COMMAND_ARG_PREFIX = "--";
             } else {
@@ -131,6 +137,17 @@ class OfficeProcess {
         }
         logger.fine("OfficeProcess info:" + versionDescriptor.toString());
         doStart(false);
+    }
+
+    protected void manageProcessOutputs(Process process) {
+        InputStream processOut = process.getInputStream();
+        InputStream processError = process.getErrorStream();
+        Thread to = new Thread(new StreamGobbler(processOut));
+        to.setDaemon(true);
+        to.start();
+        Thread te = new Thread(new StreamGobbler(processError));
+        te.setDaemon(true);
+        te.start();
     }
 
     protected void doStart(boolean retry) throws IOException {
@@ -169,6 +186,7 @@ class OfficeProcess {
         command.add(COMMAND_ARG_PREFIX + "norestore");
         ProcessBuilder processBuilder = new ProcessBuilder(command);
         processBuilder.redirectErrorStream(true);
+        lastCommand = command;
         if (PlatformUtils.isWindows()) {
             addBasisAndUrePaths(processBuilder);
         }
@@ -176,15 +194,46 @@ class OfficeProcess {
                 "starting process with acceptString '%s' and profileDir '%s'",
                 unoUrl, instanceProfileDir));
         process = processBuilder.start();
-        try {
-            // wait for process to start
-            Thread.sleep(1000);
-        } catch (Exception e) {
+
+        int exitValue = 0;
+        boolean exited = false;
+        for (int i = 0; i < 15; i++) {
+            try {
+                // wait for process to start
+                Thread.sleep(1000);
+            } catch (Exception e) {
+            }
+            try {
+                exitValue = process.exitValue();
+                // process is already dead, no need to wait longer ...
+                exited = true;
+                break;
+            } catch (IllegalThreadStateException e) {
+                // process is still up
+            }
         }
+
+        if (exited) {
+            if (exitValue == 81) {
+                logger.warning("Restarting OOo after code 81 ...");
+                process = processBuilder.start();
+                try {
+                    // wait for process to start
+                    Thread.sleep(1000);
+                } catch (Exception e) {
+                }
+            } else {
+                logger.warning("Process exited with code " + exitValue);
+            }
+        }
+
+        manageProcessOutputs(process);
+
         if (processManager.canFindPid()) {
             pid = processManager.findPid(processRegex);
             if (pid == null) {
-                logger.warning("started process, but no pid : is it dead?");
+                throw new IllegalStateException(
+                        "started process, but can not find the pid, process is probably dead");
             } else {
                 logger.info("started process : pid = " + pid);
             }
@@ -339,4 +388,60 @@ class OfficeProcess {
         return getExitCode(retryInterval, retryTimeout);
     }
 
+    @Override
+    public String toString() {
+        StringBuffer sb = new StringBuffer();
+        sb.append("\nOfficeHome : " + officeHome);
+        sb.append("\nUnoUrl : " + unoUrl);
+        if (lastCommand != null) {
+            sb.append("\nCommand line : \n");
+            for (String part : lastCommand) {
+                sb.append(part + " ");
+            }
+        }
+        sb.append("\nPID : " + pid);
+        if (templateProfileDir == null) {
+            sb.append("\ntemplateProfileDir : null");
+        } else {
+            sb.append("\ntemplateProfileDir : "
+                    + templateProfileDir.getAbsolutePath());
+        }
+        if (instanceProfileDir == null) {
+            sb.append("\ninstanceProfileDir : null");
+
+        } else {
+            sb.append("\ninstanceProfileDir : "
+                    + instanceProfileDir.getAbsolutePath());
+
+        }
+        sb.append("\nProcessManager : "
+                + processManager.getClass().getSimpleName());
+        if (versionDescriptor != null) {
+            sb.append("\nversionDescriptor : " + versionDescriptor.toString());
+        }
+        return sb.toString();
+    }
+}
+
+class StreamGobbler implements Runnable {
+
+    protected final InputStream is;
+
+    private final Logger logger = Logger.getLogger(getClass().getName());
+
+    StreamGobbler(InputStream is) {
+        this.is = is;
+    }
+
+    public void run() {
+        BufferedReader br = new BufferedReader(new InputStreamReader(is));
+        String line;
+        try {
+            while ((line = br.readLine()) != null) {
+                logger.warning("StreamGobbler: " + line);
+            }
+        } catch (IOException e) {
+            logger.warning(e.getMessage());
+        }
+    }
 }

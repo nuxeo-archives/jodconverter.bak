@@ -123,4 +123,23 @@ class ProcessPoolOfficeManager implements OfficeManager {
         }
     }
 
+    @Override
+    public String toString() {
+        StringBuffer sb = new StringBuffer();
+        sb.append("Running :" + running);
+        sb.append("\n Managers : " + pooledManagers.length);
+        for (int i = 0; i < pooledManagers.length; i++) {
+            sb.append("\n   Manager " + i);
+            sb.append("\n   " + pooledManagers[i].toString());
+        }
+        return sb.toString();
+    }
+
+    public OfficeConnection[] getConnection() {
+        OfficeConnection[] result = new OfficeConnection[pooledManagers.length];
+        for (int i = 0; i < pooledManagers.length; i++) {
+            result[i] = pooledManagers[i].getConnection()[0];
+        }
+        return result;
+    }
 }

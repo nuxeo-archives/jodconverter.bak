@@ -167,4 +167,13 @@ class ManagedOfficeProcess {
         }
     }
 
+    @Override
+    public String toString() {
+        StringBuffer sb = new StringBuffer();
+        sb.append("\nSettings :");
+        sb.append(settings.toString());
+        sb.append("\nOffice Process :");
+        sb.append(process.toString());
+        return sb.toString();
+    }
 }
