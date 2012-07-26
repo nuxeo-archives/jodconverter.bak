@@ -51,12 +51,27 @@ public class PlatformUtils {
             System.getenv("ProgramFiles") + File.separator + "OpenOffice.org 3",
             System.getenv("ProgramFiles") + File.separator + "LibreOffice 3",
             System.getenv("ProgramFiles") + File.separator + "LibreOffice 3.4",
+            System.getenv("ProgramFiles") + File.separator + "LibreOffice 3.5",
+            System.getenv("ProgramFiles") + File.separator + "LibreOffice 3.6",
+            System.getenv("ProgramFiles") + File.separator + "LibreOffice 3.7",
+            System.getenv("ProgramFiles") + File.separator + "LibreOffice 3.8",
+            System.getenv("ProgramFiles") + File.separator + "LibreOffice 3.9",
             System.getenv("ProgramFiles(x86)") + File.separator
                     + "OpenOffice.org 3",
             System.getenv("ProgramFiles(x86)") + File.separator
                     + "LibreOffice 3",
             System.getenv("ProgramFiles(x86)") + File.separator
-                    + "LibreOffice 3.4" };
+                    + "LibreOffice 3.4",
+            System.getenv("ProgramFiles(x86)") + File.separator
+                    + "LibreOffice 3.5",
+            System.getenv("ProgramFiles(x86)") + File.separator
+                    + "LibreOffice 3.6",
+            System.getenv("ProgramFiles(x86)") + File.separator
+                    + "LibreOffice 3.7",
+            System.getenv("ProgramFiles(x86)") + File.separator
+                    + "LibreOffice 3.8",
+            System.getenv("ProgramFiles(x86)") + File.separator
+                    + "LibreOffice 3.9" };
 
     private static final String[] LINUX_OO_PROFILE_PATHS = {
             System.getProperty("user.home") + File.separator
