@@ -306,20 +306,28 @@ class OfficeProcess {
 
     private void addBasisAndUrePaths(ProcessBuilder processBuilder)
             throws IOException {
+        File ureBin = null;
+        File basisProgram = null;
         // see
         // http://wiki.services.openoffice.org/wiki/ODF_Toolkit/Efforts/Three-Layer_OOo
         File basisLink = new File(officeHome, "basis-link");
         if (!basisLink.isFile()) {
-            logger.fine("no %OFFICE_HOME%/basis-link found; assuming it's OOo 2.x and we don't need to append URE and Basic paths");
-            return;
+            // check the case with LibreOffice 3.5+ home
+            File ureLink = new File(officeHome, "ure-link");
+            if (!ureLink.isFile()) {
+                logger.fine("no %OFFICE_HOME%/basis-link found; assuming it's OOo 2.x and we don't need to append URE and Basic paths");
+                return;
+            }
+            ureBin = new File(new File(officeHome, FileUtils.readFileToString(ureLink).trim()), "bin");
+        } else {
+            String basisLinkText = FileUtils.readFileToString(basisLink).trim();
+            File basisHome = new File(officeHome, basisLinkText);
+            basisProgram = new File(basisHome, "program");
+            File ureLink = new File(basisHome, "ure-link");
+            String ureLinkText = FileUtils.readFileToString(ureLink).trim();
+            File ureHome = new File(basisHome, ureLinkText);
+            ureBin = new File(ureHome, "bin");
         }
-        String basisLinkText = FileUtils.readFileToString(basisLink).trim();
-        File basisHome = new File(officeHome, basisLinkText);
-        File basisProgram = new File(basisHome, "program");
-        File ureLink = new File(basisHome, "ure-link");
-        String ureLinkText = FileUtils.readFileToString(ureLink).trim();
-        File ureHome = new File(basisHome, ureLinkText);
-        File ureBin = new File(ureHome, "bin");
         Map<String, String> environment = processBuilder.environment();
         // Windows environment variables are case insensitive but Java maps are
         // not :-/
@@ -330,8 +338,10 @@ class OfficeProcess {
                 pathKey = key;
             }
         }
-        String path = environment.get(pathKey) + ";" + ureBin.getAbsolutePath()
-                + ";" + basisProgram.getAbsolutePath();
+        String path = environment.get(pathKey) + ";" + ureBin.getAbsolutePath();
+        if (basisProgram != null) {
+            path += ";" + basisProgram.getAbsolutePath();
+        }
         logger.fine(String.format("setting %s to \"%s\"", pathKey, path));
         environment.put(pathKey, path);
     }
