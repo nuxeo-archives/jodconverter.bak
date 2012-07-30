@@ -39,7 +39,7 @@ public class PlatformUtils {
     private static final String LINUX = "linux";
 
     private static final String[] LINUX_OO_HOME_PATHS = {
-            "/usr/lib/openoffice", "/usr/lib/libreoffice",
+            "/usr/lib/libreoffice", "/usr/lib/openoffice",
             "/usr/lib/openoffice.org", "/usr/lib/openoffice.org3",
             "/opt/openoffice.org3", "/opt/libreoffice", "/usr/lib/ooo" };
 
@@ -48,30 +48,30 @@ public class PlatformUtils {
             "/Applications/OpenOffice.org.app/Contents" };
 
     private static final String[] WINDOWS_OO_HOME_PATHS = {
-            System.getenv("ProgramFiles") + File.separator + "OpenOffice.org 3",
-            System.getenv("ProgramFiles") + File.separator + "LibreOffice 3",
-            System.getenv("ProgramFiles") + File.separator + "LibreOffice 3.4",
-            System.getenv("ProgramFiles") + File.separator + "LibreOffice 3.5",
-            System.getenv("ProgramFiles") + File.separator + "LibreOffice 3.6",
-            System.getenv("ProgramFiles") + File.separator + "LibreOffice 3.7",
-            System.getenv("ProgramFiles") + File.separator + "LibreOffice 3.8",
             System.getenv("ProgramFiles") + File.separator + "LibreOffice 3.9",
+            System.getenv("ProgramFiles") + File.separator + "LibreOffice 3.8",
+            System.getenv("ProgramFiles") + File.separator + "LibreOffice 3.7",
+            System.getenv("ProgramFiles") + File.separator + "LibreOffice 3.6",
+            System.getenv("ProgramFiles") + File.separator + "LibreOffice 3.5",
+            System.getenv("ProgramFiles") + File.separator + "LibreOffice 3.4",
+            System.getenv("ProgramFiles") + File.separator + "LibreOffice 3",
             System.getenv("ProgramFiles(x86)") + File.separator
-                    + "OpenOffice.org 3",
-            System.getenv("ProgramFiles(x86)") + File.separator
-                    + "LibreOffice 3",
-            System.getenv("ProgramFiles(x86)") + File.separator
-                    + "LibreOffice 3.4",
-            System.getenv("ProgramFiles(x86)") + File.separator
-                    + "LibreOffice 3.5",
-            System.getenv("ProgramFiles(x86)") + File.separator
-                    + "LibreOffice 3.6",
-            System.getenv("ProgramFiles(x86)") + File.separator
-                    + "LibreOffice 3.7",
+                    + "LibreOffice 3.9",
             System.getenv("ProgramFiles(x86)") + File.separator
                     + "LibreOffice 3.8",
             System.getenv("ProgramFiles(x86)") + File.separator
-                    + "LibreOffice 3.9" };
+                    + "LibreOffice 3.7",
+            System.getenv("ProgramFiles(x86)") + File.separator
+                    + "LibreOffice 3.6",
+            System.getenv("ProgramFiles(x86)") + File.separator
+                    + "LibreOffice 3.5",
+            System.getenv("ProgramFiles(x86)") + File.separator
+                    + "LibreOffice 3.4",
+            System.getenv("ProgramFiles(x86)") + File.separator
+                    + "LibreOffice 3",
+            System.getenv("ProgramFiles") + File.separator + "OpenOffice.org 3",
+            System.getenv("ProgramFiles(x86)") + File.separator
+                    + "OpenOffice.org 3", };
 
     private static final String[] LINUX_OO_PROFILE_PATHS = {
             System.getProperty("user.home") + File.separator
@@ -85,8 +85,8 @@ public class PlatformUtils {
                     + "Library/Application Support/LibreOffice.org/3" };
 
     private static final String[] WINDOWS_OO_PROFILE_PATHS = {
-            System.getenv("APPDATA") + File.separator + "OpenOffice.org/3",
-            System.getenv("APPDATA") + File.separator + "LibreOffice.org/3" };
+            System.getenv("APPDATA") + File.separator + "LibreOffice.org/3",
+            System.getenv("APPDATA") + File.separator + "OpenOffice.org/3" };
 
     private static String officeProfileDir = null;
 
@@ -110,7 +110,7 @@ public class PlatformUtils {
 
     /**
      * Search for OpenOffice or LibreOffice on default paths.
-     *
+     * 
      * @return path to Office home or an empty String if not found.
      */
     public static String findOfficeHome() {
@@ -130,7 +130,7 @@ public class PlatformUtils {
 
     /**
      * Search for OpenOffice or LibreOffice user profile on default paths.
-     *
+     * 
      * @return path to Office profile or an empty String if not found.
      */
     public static String findOfficeProfileDir() {

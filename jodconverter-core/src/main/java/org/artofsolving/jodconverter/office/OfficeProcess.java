@@ -86,8 +86,14 @@ class OfficeProcess {
     }
 
     protected void determineOfficeVersion() throws IOException {
-        List<String> command = new ArrayList<String>();
+
         File executable = OfficeUtils.getOfficeExecutable(officeHome);
+        if (PlatformUtils.isWindows()) {
+            versionDescriptor = OfficeVersionDescriptor.parseFromExecutableLocation(executable.getPath());
+            return;
+        }
+
+        List<String> command = new ArrayList<String>();
         command.add(executable.getAbsolutePath());
         command.add("-help");
         command.add("-headless");
@@ -96,6 +102,8 @@ class OfficeProcess {
         command.add("-nolockcheck");
         command.add("-nologo");
         command.add("-norestore");
+        command.add("-env:UserInstallation="
+                + OfficeUtils.toUrl(instanceProfileDir));
         ProcessBuilder processBuilder = new ProcessBuilder(command);
         processBuilder.redirectErrorStream(true);
         if (PlatformUtils.isWindows()) {
