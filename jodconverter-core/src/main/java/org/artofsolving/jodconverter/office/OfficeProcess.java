@@ -60,6 +60,10 @@ class OfficeProcess {
 
     protected static OfficeVersionDescriptor versionDescriptor = null;
 
+    public static final String STARTUP_WATCH_TIMEOUT = "jod.startup.watch.timeout";
+
+    public static final int DEFAULT_STARTUP_WATCH_TIMEOUT = 7;
+
     public OfficeProcess(File officeHome, UnoUrl unoUrl,
             File templateProfileDir, ProcessManager processManager) {
         this(officeHome, unoUrl, templateProfileDir, processManager, false);
@@ -150,6 +154,18 @@ class OfficeProcess {
         te.start();
     }
 
+    protected int getStartupWatchTime() {
+        String timeOutStr = System.getProperty(STARTUP_WATCH_TIMEOUT, null);
+        if (timeOutStr != null) {
+            try {
+                return new Integer(timeOutStr);
+            } catch (NumberFormatException e) {
+                return DEFAULT_STARTUP_WATCH_TIMEOUT;
+            }
+        }
+        return DEFAULT_STARTUP_WATCH_TIMEOUT;
+    }
+
     protected void doStart(boolean retry) throws IOException {
         String processRegex = "soffice.*"
                 + Pattern.quote(unoUrl.getAcceptString());
@@ -197,10 +213,10 @@ class OfficeProcess {
 
         int exitValue = 0;
         boolean exited = false;
-        for (int i = 0; i < 15; i++) {
+        for (int i = 0; i < getStartupWatchTime() * 2; i++) {
             try {
                 // wait for process to start
-                Thread.sleep(1000);
+                Thread.sleep(500);
             } catch (Exception e) {
             }
             try {
@@ -318,7 +334,8 @@ class OfficeProcess {
                 logger.fine("no %OFFICE_HOME%/basis-link found; assuming it's OOo 2.x and we don't need to append URE and Basic paths");
                 return;
             }
-            ureBin = new File(new File(officeHome, FileUtils.readFileToString(ureLink).trim()), "bin");
+            ureBin = new File(new File(officeHome, FileUtils.readFileToString(
+                    ureLink).trim()), "bin");
         } else {
             String basisLinkText = FileUtils.readFileToString(basisLink).trim();
             File basisHome = new File(officeHome, basisLinkText);

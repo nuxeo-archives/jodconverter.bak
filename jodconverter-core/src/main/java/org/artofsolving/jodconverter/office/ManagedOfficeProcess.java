@@ -77,7 +77,7 @@ class ManagedOfficeProcess {
         try {
             future.get();
         } catch (Exception exception) {
-            throw new OfficeException("failed to start and connect", exception);
+            throw new OfficeException("failed to stop", exception);
         }
     }
 
