@@ -34,6 +34,7 @@ import com.sun.star.lang.XComponent;
 import com.sun.star.text.XDocumentIndex;
 import com.sun.star.text.XDocumentIndexesSupplier;
 import com.sun.star.text.XTextDocument;
+import com.sun.star.util.XRefreshable;
 
 /**
  * 
@@ -119,6 +120,18 @@ public class StandardConversionTask extends AbstractConversionTask {
                     XDocumentIndexesSupplier.class, xDocument);
             XDocumentIndex index = null;
 
+            XRefreshable xRefreshable = cast(XRefreshable.class, document);
+            if (xRefreshable != null) {
+                // This refresh operation solves issues with ToC update operations,
+                // which could lead to bad page numbers in some scenarios (specific
+                // hosts, specific documents, conversion to non-single-file document 
+                // format like ODT - PDF not affected).
+                // References:
+                //   * http://www.oooforum.org/forum/viewtopic.phtml?t=7826
+                //   * https://issues.apache.org/ooo/show_bug.cgi?id=29165
+                xRefreshable.refresh();
+            }
+            
             if (indexSupplier != null) {
                 XIndexAccess ia = indexSupplier.getDocumentIndexes();
                 for (int i = 0; i < ia.getCount(); i++) {
